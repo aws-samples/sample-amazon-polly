@@ -15,7 +15,7 @@ Amazon Polly is a cloud service that converts text into lifelike speech. It offe
 
 The [getting_started/](getting_started/) folder contains Jupyter notebooks that walk you through the basics of using Amazon Polly:
 
-1. **Basic Speech Synthesis**: Learn how to use the boto3 Polly client to call synthesizeSpeech for different engines and save the audio files locally.
+1. **Basic Speech Synthesis**: Learn how to use the [boto3 Polly client](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly.html) to call synthesizeSpeech for different engines and save the audio files locally.
 
 2. **Asynchronous Speech Synthesis**: Discover how to create synthesis tasks, check their status, and retrieve results from S3 for longer content or batch processing.
 
@@ -33,7 +33,7 @@ To use these examples, you'll need:
 
 - An AWS account with access to Amazon Polly
 - Python 3.9+ with boto3 installed
-- AWS credentials configured locally
+- [AWS credentials configured](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-authentication.html#cli-chap-authentication-precedence) locally
 - For asynchronous examples: An S3 bucket with appropriate permissions
 
 ## Additional Resources
