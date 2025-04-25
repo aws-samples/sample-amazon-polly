@@ -219,7 +219,7 @@ For larger synthesis need (over the 3000 character limit), a batch process can l
                 "Engine": "generative",
                 "TaskId": "7ea22b1f-9906-47c1-8a8f-8667f9497230",
                 "TaskStatus": "completed",
-                "OutputUri": "https://s3.us-east-1.amazonaws.com/mishsc-polly-output/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3",
+                "OutputUri": "https://s3.us-east-1.amazonaws.com/<your-unique-name>/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3",
                 "CreationTime": "2025-04-25T10:14:53.905000-05:00",
                 "RequestCharacters": 137,
                 "OutputFormat": "mp3",
@@ -231,7 +231,7 @@ For larger synthesis need (over the 3000 character limit), a batch process can l
     Capture the `OutputUri` to created audio file.
 1. Downloading the file using the `OutputUri` requires that the AWS credentials being used have access to the bucket. Once the IAM policies are in place, the `s3` `cp` command can be used to download the file. Here will replace the `https` protocol with `s3` using only bucket name and the file name
     ```sh
-    aws s3 cp s3://mishsc-polly-output/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3 ./output.mp3
+    aws s3 cp s3://<your-unique-name>/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3 ./output.mp3
     ```
 1. The `output.mp3` file should be downloaded locally and ready to play.
 
