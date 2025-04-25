@@ -89,7 +89,153 @@ A speech job for longer content. Perfect for articles, books, or batch processin
 | Léa | French | Female | Standard, Neural |
 | Takumi | Japanese | Male | Standard, Neural |
 
-# Quick Start
+# Quick Start - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+
+Because Amazon Polly is a set of APIs hosted in AWS the `aws cli` tooling can be used to interact with Polly directly from the command line
+
+### Setup
+
+In this setup we assume the user already have an AWS Account, and has the ability to create IAM Policies or has a role with the  `AmazonPollyFullAccess` policy that is supplied by AWS.
+
+- Install the AWS CLI using the [AWS CLI User Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+    -  You will find steps for Windows, macOS, and Linux along with any necessary pre-requisite dependencies that need to be installed
+- Configure the credentials for AWS CLI using the [configuration guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+- You can review ALL Polly commands in the [reference guide for Polly](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/polly/index.html#cli-aws-polly).
+
+### Your First Polly Command 
+
+One of the fastest ways to understand Polly is to look at the available voices that can be used in a particular region. This is helpful in avoiding unexpected errors when converting text to speech. This step assumes you have completed the CLI Setup mentioned above
+
+```sh
+aws polly describe-voices
+```
+This command will list all voices and in what way they can be used, providing back meta-data like `SupportEngines`, `LanguageCode`, and `Id`. An example output:
+
+```json
+{
+    "Voices": [
+        {
+            "Gender": "Female",
+            "Id": "Isabelle",
+            "LanguageCode": "fr-BE",
+            "LanguageName": "Belgian French",
+            "Name": "Isabelle",
+            "SupportedEngines": [
+                "neural"
+            ]
+        },
+        {
+            "Gender": "Female",
+            "Id": "Danielle",
+            "LanguageCode": "en-US",
+            "LanguageName": "US English",
+            "Name": "Danielle",
+            "SupportedEngines": [
+                "generative",
+                "long-form",
+                "neural"
+            ]
+        }
+    ]
+}
+```
+
+From the voices output, you can select a voice that you want to perform the text to speech generation using the [`synthesize-speech`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/polly/synthesize-speech.html) command:
+
+```sh
+aws polly synthesize-speech --engine generative --voice-id Stephen --text "Hello from Polly this is Stephen speaking, using the Generative voice engine" --output-format mp3 polly_intro.mp3
+```
+
+Here we are selecting the `generative` engine (the most advanced Polly engine), using `Stephen` as our voice and saving the output as an `mp3` file named `polly_intro.mp3`. 
+
+There may be times when the goal is to pass the contents of a file as a string into Polly via the command line for an ad-hoc synthesis. The follow steps can be followed to achieve the goal:
+
+1. Create the sample text file to be used in the `synthesize-speech` command
+
+    ```sh
+    echo "Hello from Amazon Polly, you are using the AWS CLI to convert the contents of a text file into speech" > test_text.txt
+    ```
+
+1. Feed the file into the command
+
+    ```sh
+    aws polly synthesize-speech --engine generative --voice-id Stephen --text file://test_text.txt --output-format mp3 polly_file_input.mp3
+    ```
+
+The polly cli command can leverage `file` protocol to interact with files on the command line. Remember that Polly has a **3000 character** limit when using `synthesize-speech`
+
+### Advanced Polly Commands
+
+For larger synthesis need (over the 3000 character limit), a batch process can leverage the [`start_speech_synthesis_task`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/polly/start-speech-synthesis-task.html) command. This gives users the ability to process up-to 100,000 characters in a single execution. 
+
+**NOTE** this is NOT meant for real-time usage.
+
+1. Create and S3 bucket to store the output files using the s3api command
+    ```sh
+    aws s3api create-bucket --bucket <your-unique-name>
+    ```
+
+1. Create a sample test file to send to Polly
+    ```sh
+    echo "Hello from Amazon Polly, you are using the AWS CLI to convert the contents of a text file into speech using the batch processing of Polly" > polly_task_test.txt
+    ```
+1. Start the synthesis task using the
+
+    ```sh
+    aws polly start-speech-synthesis-task \
+    --engine generative --output-format mp3 \
+    --text file://polly_task_test.txt \
+    --voice-id Joanna \
+    --output-s3-bucket-name <your-unique-name>
+    ```
+    This will provide output that looks like:
+
+    ```json
+    {
+        "SynthesisTask": {
+            "Engine": "generative",
+            "TaskId": "7ea22b1f-9906-47c1-8a8f-8667f9497230",
+            "TaskStatus": "scheduled",
+            "OutputUri": "https://s3.us-east-1.amazonaws.com/<your-unique-name>/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3",
+            "CreationTime": "2025-04-25T10:14:53.905000-05:00",
+            "RequestCharacters": 137,
+            "OutputFormat": "mp3",
+            "TextType": "text",
+            "VoiceId": "Joanna"
+        }
+    }
+    ```
+    From the output capture the `TaskId` as it will be needed in the next few commands
+
+1. Check the status of the processing task using [`get-speech-synthesis-task`](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/polly/get-speech-synthesis-task.html). The `TaskId` from the previous step will be needed here to retrieve the status, and will be different for every Task.
+    ```sh
+    aws polly get-speech-synthesis-task \
+    --task-id 7ea22b1f-9906-47c1-8a8f-8667f9497230
+    ```
+    The output of the command shows the status of the Task, and will show `completed` once the audio file has been created and written to the s3 bucket
+    ```json
+        {
+            "SynthesisTask": {
+                "Engine": "generative",
+                "TaskId": "7ea22b1f-9906-47c1-8a8f-8667f9497230",
+                "TaskStatus": "completed",
+                "OutputUri": "https://s3.us-east-1.amazonaws.com/mishsc-polly-output/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3",
+                "CreationTime": "2025-04-25T10:14:53.905000-05:00",
+                "RequestCharacters": 137,
+                "OutputFormat": "mp3",
+                "TextType": "text",
+                "VoiceId": "Joanna"
+            }
+        }
+    ```
+    Capture the `OutputUri` to created audio file.
+1. Downloading the file using the `OutputUri` requires that the AWS credentials being used have access to the bucket. Once the IAM policies are in place, the `s3` `cp` command can be used to download the file. Here will replace the `https` protocol with `s3` using only bucket name and the file name
+    ```sh
+    aws s3 cp s3://mishsc-polly-output/7ea22b1f-9906-47c1-8a8f-8667f9497230.mp3 ./output.mp3
+    ```
+1. The `output.mp3` file should be downloaded locally and ready to play.
+
+# Quick Start - Python
 
 ### Setup
 ```bash
